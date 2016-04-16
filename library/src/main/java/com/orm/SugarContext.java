@@ -5,6 +5,7 @@ import android.content.Context;
 import com.orm.util.ContextUtil;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -14,10 +15,12 @@ public class SugarContext {
     private static SugarContext instance = null;
     private SugarDb sugarDb;
     private Map<Object, Long> entitiesMap;
+    private Map<Class<?>, SugarSerializer> serializers;
 
-    private SugarContext() {
-        this.sugarDb = SugarDb.getInstance();
+    private SugarContext(SugarDbCallback sugarDbCallback) {
+        this.sugarDb = SugarDb.getInstance(sugarDbCallback);
         this.entitiesMap = Collections.synchronizedMap(new WeakHashMap<Object, Long>());
+        this.serializers = Collections.synchronizedMap(new HashMap<Class<?>, SugarSerializer>());
     }
     
     public static SugarContext getSugarContext() {
@@ -27,14 +30,14 @@ public class SugarContext {
         return instance;
     }
 
-    public static void init(Context context) {
+    public static void init(Context context, SugarDbCallback sugarDbCallback) {
         ContextUtil.init(context);
-        instance = new SugarContext();
+        instance = new SugarContext(sugarDbCallback);
         dbConfiguration = null;
     }
 
-    public static void init(Context context, SugarDbConfiguration configuration) {
-        init(context);
+    public static void init(Context context, SugarDbCallback sugarDbCallback, SugarDbConfiguration configuration) {
+        init(context, sugarDbCallback);
         dbConfiguration = configuration;
     }
 
@@ -54,6 +57,7 @@ public class SugarContext {
      * Robolectric Android mock.
      */
     private void doTerminate() {
+        serializers.clear();
         if (this.sugarDb != null) {
             this.sugarDb.getDB().close();
         }
@@ -69,5 +73,9 @@ public class SugarContext {
 
     public Map<Object, Long> getEntitiesMap() {
         return entitiesMap;
+    }
+
+    public Map<Class<?>, SugarSerializer> getSerializers() {
+        return serializers;
     }
 }

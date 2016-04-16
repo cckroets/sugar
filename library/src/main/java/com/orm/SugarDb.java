@@ -16,22 +16,31 @@ public class SugarDb extends SQLiteOpenHelper {
     private static final String LOG_TAG = "Sugar";
 
     private final SchemaGenerator schemaGenerator;
+    private final SugarDbCallback dbCallback;
     private SQLiteDatabase sqLiteDatabase;
     private int openedConnections = 0;
 
     //Prevent instantiation
-    private SugarDb() {
+    private SugarDb(SugarDbCallback callback) {
         super(getContext(), getDbName(), new SugarCursorFactory(ManifestHelper.isDebugEnabled()), getDatabaseVersion());
+        dbCallback = callback;
         schemaGenerator = SchemaGenerator.getInstance();
     }
 
     public static SugarDb getInstance() {
-        return new SugarDb();
+        return new SugarDb(null);
+    }
+
+    public static SugarDb getInstance(SugarDbCallback callback) {
+        return new SugarDb(callback);
     }
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         schemaGenerator.createDatabase(sqLiteDatabase);
+        if (dbCallback != null) {
+            dbCallback.onCreate(sqLiteDatabase);
+        }
     }
 
     @Override
@@ -45,11 +54,17 @@ public class SugarDb extends SQLiteOpenHelper {
         }
 
         super.onConfigure(db);
+        if (dbCallback != null) {
+            dbCallback.onConfigure(db);
+        }
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
         schemaGenerator.doUpgrade(sqLiteDatabase, oldVersion, newVersion);
+        if (dbCallback != null) {
+            dbCallback.onUpgrade(sqLiteDatabase, oldVersion, newVersion);
+        }
     }
 
     public synchronized SQLiteDatabase getDB() {

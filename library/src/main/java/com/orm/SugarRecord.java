@@ -215,7 +215,7 @@ public class SugarRecord {
         try {
             while (cursor.moveToNext()) {
                 entity = type.getDeclaredConstructor().newInstance();
-                inflate(cursor, entity, getSugarContext().getEntitiesMap());
+                inflate(cursor, entity, getSugarContext().getEntitiesMap(), getSugarContext().getSerializers());
                 result.add(entity);
             }
         } catch (Exception e) {
@@ -267,11 +267,12 @@ public class SugarRecord {
 
     static long save(SQLiteDatabase db, Object object) {
         Map<Object, Long> entitiesMap = getSugarContext().getEntitiesMap();
+        Map<Class<?>, SugarSerializer> serializerMap = getSugarContext().getSerializers();
         List<Field> columns = ReflectionUtil.getTableFields(object.getClass());
         ContentValues values = new ContentValues(columns.size());
         Field idField = null;
         for (Field column : columns) {
-            ReflectionUtil.addFieldValueToColumn(values, column, object, entitiesMap);
+            ReflectionUtil.addFieldValueToColumn(values, column, object, entitiesMap, serializerMap);
             if (column.getName().equals("id")) {
                 idField = column;
             }
@@ -313,6 +314,7 @@ public class SugarRecord {
 
     static long update(SQLiteDatabase db, Object object) {
         Map<Object, Long> entitiesMap = getSugarContext().getEntitiesMap();
+        Map<Class<?>, SugarSerializer> serializerMap = getSugarContext().getSerializers();
         List<Field> columns = ReflectionUtil.getTableFields(object.getClass());
         ContentValues values = new ContentValues(columns.size());
 
@@ -333,7 +335,7 @@ public class SugarRecord {
                 }
             } else {
                 if (!column.getName().equals("id")) {
-                    ReflectionUtil.addFieldValueToColumn(values, column, object, entitiesMap);
+                    ReflectionUtil.addFieldValueToColumn(values, column, object, entitiesMap, serializerMap);
                 }
             }
         }
@@ -355,7 +357,8 @@ public class SugarRecord {
         return objectClass.isAnnotationPresent(Table.class) || SugarRecord.class.isAssignableFrom(objectClass);
     }
 
-    private static void inflate(Cursor cursor, Object object, Map<Object, Long> entitiesMap) {
+    private static void inflate(Cursor cursor, Object object, Map<Object, Long> entitiesMap,
+                                Map<Class<?>, SugarSerializer> serializerMap) {
         List<Field> columns = ReflectionUtil.getTableFields(object.getClass());
         if (!entitiesMap.containsKey(object)) {
             entitiesMap.put(object, cursor.getLong(cursor.getColumnIndex(("ID"))));
@@ -372,7 +375,7 @@ public class SugarRecord {
                     e.printStackTrace();
                 }
             } else {
-                ReflectionUtil.setFieldValueFromCursor(cursor, field, object);
+                ReflectionUtil.setFieldValueFromCursor(cursor, field, object, serializerMap);
             }
         }
     }
@@ -429,7 +432,7 @@ public class SugarRecord {
 
     @SuppressWarnings("unchecked")
     void inflate(Cursor cursor) {
-        inflate(cursor, this, getSugarContext().getEntitiesMap());
+        inflate(cursor, this, getSugarContext().getEntitiesMap(), getSugarContext().getSerializers());
     }
 
     public Long getId() {
@@ -467,7 +470,7 @@ public class SugarRecord {
 
             try {
                 entity = type.getDeclaredConstructor().newInstance();
-                inflate(cursor, entity, getSugarContext().getEntitiesMap());
+                inflate(cursor, entity, getSugarContext().getEntitiesMap(), getSugarContext().getSerializers());
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {

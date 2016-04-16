@@ -27,7 +27,7 @@ public final class SugarDbConfigurationTest {
                 .setMaxSize(1024L)
                 .setPageSize(400L);
 
-        SugarContext.init(RuntimeEnvironment.application, configuration);
+        SugarContext.init(RuntimeEnvironment.application, null, configuration);
 
         final SugarDbConfiguration config = SugarContext.getDbConfiguration();
 
@@ -38,7 +38,7 @@ public final class SugarDbConfigurationTest {
 
     @Test
     public void testNullConfiguration() {
-        SugarContext.init(RuntimeEnvironment.application);
+        SugarContext.init(RuntimeEnvironment.application, null);
         assertNull(SugarContext.getDbConfiguration());
     }
 

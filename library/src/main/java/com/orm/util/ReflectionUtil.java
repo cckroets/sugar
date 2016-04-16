@@ -6,7 +6,9 @@ import android.database.Cursor;
 import android.util.Log;
 
 import com.orm.SugarRecord;
+import com.orm.SugarSerializer;
 import com.orm.annotation.Ignore;
+import com.orm.annotation.Serialize;
 import com.orm.annotation.Table;
 import com.orm.helper.ManifestHelper;
 import com.orm.helper.MultiDexHelper;
@@ -63,8 +65,32 @@ public final class ReflectionUtil {
         return fields;
     }
 
+    private static SugarSerializer getSerializer(Serialize annotation,
+                                                 Map<Class<?>, SugarSerializer> serializerMap) {
+        Class<?> serializerClass = annotation.value();
+        if (serializerMap.containsKey(serializerClass)) {
+            return serializerMap.get(serializerClass);
+        }
+
+        if (!SugarSerializer.class.isAssignableFrom(serializerClass)) {
+            Log.e("Sugar", "Invalid serializer " + annotation.value());
+            return null;
+        }
+        try {
+            SugarSerializer sugarSerializer = (SugarSerializer) serializerClass.newInstance();
+            serializerMap.put(serializerClass, sugarSerializer);
+            return sugarSerializer;
+        } catch (IllegalAccessException e1) {
+            Log.e("Sugar", e1.getMessage());
+        } catch (InstantiationException e2) {
+            Log.e("Sugar", e2.getMessage());
+        }
+        return null;
+    }
+
     public static void addFieldValueToColumn(ContentValues values, Field column, Object object,
-                                             Map<Object, Long> entitiesMap) {
+                                             Map<Object, Long> entitiesMap,
+                                             Map<Class<?>, SugarSerializer> serializerMap) {
         column.setAccessible(true);
         Class<?> columnType = column.getType();
         try {
@@ -135,6 +161,11 @@ public final class ReflectionUtil {
                 } else {
                     if (columnValue == null) {
                         values.putNull(columnName);
+                    } else if (column.isAnnotationPresent(Serialize.class)) {
+                        SugarSerializer sugarSerializer = getSerializer(column.getAnnotation(Serialize.class), serializerMap);
+                        if (sugarSerializer != null) {
+                            values.put(columnName, sugarSerializer.serialize(column, columnValue));
+                        }
                     } else if (columnType.isEnum()) {
                         values.put(columnName, ((Enum) columnValue).name());
                     } else {
@@ -148,7 +179,8 @@ public final class ReflectionUtil {
         }
     }
 
-    public static void setFieldValueFromCursor(Cursor cursor, Field field, Object object) {
+    public static void setFieldValueFromCursor(Cursor cursor, Field field, Object object,
+                                               Map<Class<?>, SugarSerializer> serializerMap) {
         field.setAccessible(true);
         try {
             Class fieldType = field.getType();
@@ -210,6 +242,12 @@ public final class ReflectionUtil {
                     field.set(object, "".getBytes());
                 } else {
                     field.set(object, cursor.getBlob(columnIndex));
+                }
+            } else if (field.isAnnotationPresent(Serialize.class)) {
+                SugarSerializer serializer = getSerializer(field.getAnnotation(Serialize.class), serializerMap);
+                if (serializer != null) {
+                    String val = cursor.getString(columnIndex);
+                    field.set(object, serializer.deserialize(field, val));
                 }
             } else if (Enum.class.isAssignableFrom(fieldType)) {
                 try {
