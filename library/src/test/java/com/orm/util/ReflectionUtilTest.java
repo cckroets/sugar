@@ -4,11 +4,13 @@ import android.content.ContentValues;
 import android.database.Cursor;
 
 import com.orm.SugarContext;
+import com.orm.SugarSerializer;
 import com.orm.app.ClientApp;
 import com.orm.dsl.BuildConfig;
 import com.orm.model.TestRecord;
 import com.orm.query.Select;
 
+import java.util.HashMap;
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -55,7 +57,7 @@ public final class ReflectionUtilTest {
         Field column = TestRecord.class.getField("name");
         ContentValues values = new ContentValues();
 
-        ReflectionUtil.addFieldValueToColumn(values, column, record, context.getEntitiesMap());
+        ReflectionUtil.addFieldValueToColumn(values, column, record, context.getEntitiesMap(), context.getSerializers());
 
         Assert.assertEquals(record.getName(), values.getAsString("NAME"));
     }
@@ -86,6 +88,6 @@ public final class ReflectionUtilTest {
         TestRecord testRecord = new TestRecord();
         Field field = TestRecord.class.getField("name");
 
-        ReflectionUtil.setFieldValueFromCursor(cursor, field, testRecord);
+        ReflectionUtil.setFieldValueFromCursor(cursor, field, testRecord, new HashMap<Class<?>, SugarSerializer>());
     }
 }

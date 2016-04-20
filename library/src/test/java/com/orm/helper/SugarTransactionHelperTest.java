@@ -3,7 +3,6 @@ package com.orm.helper;
 import com.orm.app.ClientApp;
 import com.orm.SugarContext;
 import com.orm.dsl.BuildConfig;
-import com.orm.helper.SugarTransactionHelper;
 import com.orm.model.TestRecord;
 
 import org.junit.Before;

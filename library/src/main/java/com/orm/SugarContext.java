@@ -30,6 +30,10 @@ public class SugarContext {
         return instance;
     }
 
+    public static void init(Context context) {
+        init(context, null);
+    }
+
     public static void init(Context context, SugarDbCallback sugarDbCallback) {
         ContextUtil.init(context);
         instance = new SugarContext(sugarDbCallback);

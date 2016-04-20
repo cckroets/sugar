@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static com.orm.SugarContext.getSugarContext;
+import rx.Observable;
+import rx.Subscriber;
 
 public class SugarRecord {
     public static final String SUGAR = "Sugar";
@@ -142,6 +144,17 @@ public class SugarRecord {
         return findById(type, Long.valueOf(id));
     }
 
+    public static <T> Observable<T> findByIdRx(final Class<T> type, final Integer id) {
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                subscriber.onStart();
+                subscriber.onNext(findById(type, Long.valueOf(id)));
+                subscriber.onCompleted();
+            }
+        });
+    }
+
     public static <T> List<T> findById(Class<T> type, String[] ids) {
         String whereClause = "id IN (" + QueryBuilder.generatePlaceholders(ids.length) + ")";
         return find(type, whereClause, ids);
@@ -169,6 +182,20 @@ public class SugarRecord {
         return findAsIterator(type, null, null, null, null, null);
     }
 
+    public static <T> Observable<T> findAllRx(final Class<T> type) {
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                subscriber.onStart();
+                Iterator<T> results = findAsIterator(type, null, null, null, null, null);
+                while (results.hasNext()) {
+                    subscriber.onNext(results.next());
+                }
+                subscriber.onCompleted();
+            }
+        });
+    }
+
     public static <T> Iterator<T> findAsIterator(Class<T> type, String whereClause, String... whereArgs) {
         return findAsIterator(type, whereClause, whereArgs, null, null, null);
     }
@@ -186,6 +213,20 @@ public class SugarRecord {
 
     public static <T> List<T> find(Class<T> type, String whereClause, String... whereArgs) {
         return find(type, whereClause, whereArgs, null, null, null);
+    }
+
+    public static <T> Observable<T> findRx(final Class<T> type, final String whereClause, final String... whereArgs) {
+        return Observable.create(new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                subscriber.onStart();
+                List<T> results = find(type, whereClause, whereArgs, null, null, null);
+                for (T r : results) {
+                    subscriber.onNext(r);
+                }
+                subscriber.onCompleted();
+            }
+        });
     }
 
     public static <T> List<T> findWithQuery(Class<T> type, String query, String... arguments) {
@@ -207,6 +248,20 @@ public class SugarRecord {
                 groupBy, null, orderBy, limit);
 
         return getEntitiesFromCursor(cursor, type);
+    }
+
+    public static <T> Observable<List<T>> findRx(final Class<T> type, final String whereClause,
+                                                 final String[] whereArgs, final String groupBy,
+                                                 final String orderBy, final String limit) {
+        return Observable.create(new Observable.OnSubscribe<List<T>>() {
+            @Override
+            public void call(Subscriber<? super List<T>> subscriber) {
+                subscriber.onStart();
+                List<T> results = find(type, whereClause, whereArgs, groupBy, orderBy, limit);
+                subscriber.onNext(results);
+                subscriber.onCompleted();
+            }
+        });
     }
 
     public static <T> List<T> getEntitiesFromCursor(Cursor cursor, Class<T> type){

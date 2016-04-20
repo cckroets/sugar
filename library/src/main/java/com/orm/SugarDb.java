@@ -55,15 +55,17 @@ public class SugarDb extends SQLiteOpenHelper {
 
         super.onConfigure(db);
         if (dbCallback != null) {
+            sqLiteDatabase = db;
             dbCallback.onConfigure(db);
         }
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
-        schemaGenerator.doUpgrade(sqLiteDatabase, oldVersion, newVersion);
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        schemaGenerator.doUpgrade(db, oldVersion, newVersion);
         if (dbCallback != null) {
-            dbCallback.onUpgrade(sqLiteDatabase, oldVersion, newVersion);
+            sqLiteDatabase = db;
+            dbCallback.onUpgrade(db, oldVersion, newVersion);
         }
     }
 
