@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQuery;
-import android.util.Log;
+import timber.log.Timber;
 
 public class SugarCursorFactory implements SQLiteDatabase.CursorFactory {
 
@@ -26,7 +26,7 @@ public class SugarCursorFactory implements SQLiteDatabase.CursorFactory {
             SQLiteQuery sqLiteQuery) {
 
         if (debugEnabled) {
-            Log.d("SQL Log", sqLiteQuery.toString());
+            Timber.d("SQL Log", sqLiteQuery.toString());
         }
 
         return new SQLiteCursor(sqLiteDatabase, sqLiteCursorDriver, editTable, sqLiteQuery);

@@ -3,7 +3,7 @@ package com.orm.util;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.util.Log;
+import timber.log.Timber;
 
 import com.orm.SugarRecord;
 import com.orm.SugarSerializer;
@@ -39,7 +39,7 @@ public final class ReflectionUtil {
         List<Field> fieldList = SugarConfig.getFields(table);
         if (fieldList != null) return fieldList;
 
-        Log.d("Sugar", "Fetching properties");
+        Timber.d("Fetching properties");
         List<Field> typeFields = new ArrayList<>();
 
         getAllFields(typeFields, table);
@@ -73,7 +73,7 @@ public final class ReflectionUtil {
         }
 
         if (!SugarSerializer.class.isAssignableFrom(serializerClass)) {
-            Log.e("Sugar", "Invalid serializer " + annotation.value());
+            Timber.e("Invalid serializer " + annotation.value());
             return null;
         }
         try {
@@ -81,9 +81,9 @@ public final class ReflectionUtil {
             serializerMap.put(serializerClass, sugarSerializer);
             return sugarSerializer;
         } catch (IllegalAccessException e1) {
-            Log.e("Sugar", e1.getMessage());
+            Timber.e(e1.getMessage());
         } catch (InstantiationException e2) {
-            Log.e("Sugar", e2.getMessage());
+            Timber.e(e2.getMessage());
         }
         return null;
     }
@@ -175,7 +175,7 @@ public final class ReflectionUtil {
             }
 
         } catch (IllegalAccessException e) {
-            Log.e("Sugar", e.getMessage());
+            Timber.e(e, "addFieldValueToColumn: " + column.getName() + ", object=" + object);
         }
     }
 
@@ -190,7 +190,7 @@ public final class ReflectionUtil {
 
             //TODO auto upgrade to add new columns
             if (columnIndex < 0) {
-                Log.e("SUGAR", "Invalid colName, you should upgrade database");
+                Timber.e("Invalid colName, you should upgrade database");
                 return;
             }
 
@@ -256,12 +256,12 @@ public final class ReflectionUtil {
                     Object enumVal = valueOf.invoke(field.getType(), strVal);
                     field.set(object, enumVal);
                 } catch (Exception e) {
-                    Log.e("Sugar", "Enum cannot be read from Sqlite3 database. Please check the type of field " + field.getName());
+                    Timber.e("Enum cannot be read from Sqlite3 database. Please check the type of field " + field.getName());
                 }
             } else
-                Log.e("Sugar", "Class cannot be read from Sqlite3 database. Please check the type of field " + field.getName() + "(" + field.getType().getName() + ")");
+                Timber.e("Class cannot be read from Sqlite3 database. Please check the type of field " + field.getName() + "(" + field.getType().getName() + ")");
         } catch (IllegalArgumentException | IllegalAccessException e) {
-            Log.e("field set error", e.getMessage());
+            Timber.e(e, "field set error", e.getMessage());
         }
     }
 
@@ -296,7 +296,7 @@ public final class ReflectionUtil {
                 if (domainClass != null) domainClasses.add(domainClass);
             }
         } catch (IOException | PackageManager.NameNotFoundException  e) {
-            Log.e("Sugar", e.getMessage());
+            Timber.e(e, "getDomainClasses()" + e.getMessage());
         }
 
         return domainClasses;
@@ -309,7 +309,7 @@ public final class ReflectionUtil {
             discoveredClass = Class.forName(className, true, Thread.currentThread().getContextClassLoader());
         } catch (Throwable e) {
             String error = (e.getMessage() == null) ? "getDomainClass " + className + " error" : e.getMessage();
-            Log.e("Sugar", error);
+            Timber.e(e, error);
         }
 
         if ((discoveredClass != null) &&
@@ -318,7 +318,7 @@ public final class ReflectionUtil {
                         discoveredClass.isAnnotationPresent(Table.class)) &&
                 !Modifier.isAbstract(discoveredClass.getModifiers())) {
 
-            Log.i("Sugar", "domain class : " + discoveredClass.getSimpleName());
+            Timber.i("domain class : " + discoveredClass.getSimpleName());
             return discoveredClass;
 
         } else {
