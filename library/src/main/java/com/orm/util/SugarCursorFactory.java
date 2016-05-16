@@ -26,7 +26,7 @@ public class SugarCursorFactory implements SQLiteDatabase.CursorFactory {
             SQLiteQuery sqLiteQuery) {
 
         if (debugEnabled) {
-            Timber.d("SQL Log", sqLiteQuery.toString());
+            Timber.d("SQL Log: %s", sqLiteQuery.toString());
         }
 
         return new SQLiteCursor(sqLiteDatabase, sqLiteCursorDriver, editTable, sqLiteQuery);
